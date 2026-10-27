@@ -3,16 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EPCOR Standards Finder</title>
+<title>Somerville · EPCOR Standards Finder</title>
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --text:#1b1f24; --muted:#5d6672; --line:#e2e5ea; --accent:#0a6ebd; --accent-ink:#fff; --warn:#a15c00; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#111418; --card:#1a1f26; --text:#e8ebef; --muted:#9aa4b0; --line:#2b323b; --accent:#4aa3e8; --accent-ink:#06121d; --warn:#e0a24a; }
-  }
-  * { box-sizing: border-box; }
+  :root { --bg:#f3f4f6; --card:#fff; --text:#16181b; --muted:#5b636d; --line:#dcdfe4; --accent:#c8102e; --accent-ink:#fff; --warn:#a15c00; --band:#fff; }
+  :root[data-theme="dark"] { --bg:#0c0d0f; --card:#17191d; --text:#eceef1; --muted:#9aa2ad; --line:#2a2d33; --accent:#e5384a; --accent-ink:#fff; --warn:#e0a24a; --band:#000; }
+  .band { background:var(--band); }
+  .band .in { max-width:1000px; margin:0 auto; position:relative; }
+  .band img { display:block; width:100%; height:auto; }
+  #theme { position:absolute; right:12px; top:12px; font:inherit; font-weight:550; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:99px; padding:6px 12px; cursor:pointer; }
+  #theme:hover { border-color:var(--accent); }  * { box-sizing: border-box; }
   body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
   header, main { max-width:1000px; margin:0 auto; padding:0 16px; }
-  header { padding-top:28px; }
+  header { padding-top:20px; }
   h1 { margin:0 0 4px; font-size:1.6rem; }
   .sub { color:var(--muted); margin:0 0 18px; }
   .sub a { color:var(--accent); }
@@ -39,6 +41,7 @@
 </style>
 </head>
 <body>
+<div class="band"><div class="in"><img id="logo" alt="Somerville" src=""><button id="theme" type="button" aria-label="Toggle light or dark mode"></button></div></div>
 <header>
   <h1>EPCOR Standards Finder</h1>
   <p class="sub">Search and download EPCOR Edmonton guides &amp; standards, or find an individual drawing by keyword or standard number. Source:
@@ -56,10 +59,25 @@
   <div id="list"></div>
 </main>
 <footer>Always confirm you are using the current version on EPCOR's site before relying on a document. Drawing index covers Power Volume 7 (2026, 2024), the Power Customer Connection Guide and Water Volume 4 (2024).</footer>
+<script src="theme.js"></script>
 <script src="data.js"></script>
 <script src="drawings.js"></script>
 <script>
-const D = window.STANDARDS;
+const root = document.documentElement;
+let theme; try { theme = localStorage.getItem("theme"); } catch (e) {}
+if (!theme) theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+function applyTheme() {
+  root.dataset.theme = theme;
+  document.getElementById("logo").src = window.THEME[theme];
+  document.getElementById("theme").textContent = theme === "dark" ? "☀ Light mode" : "☾ Dark mode";
+}
+document.getElementById("theme").addEventListener("click", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem("theme", theme); } catch (e) {}
+  applyTheme();
+});
+let ic = document.createElement("link"); ic.rel = "icon"; ic.href = window.THEME.icon; document.head.appendChild(ic);
+applyTheme();const D = window.STANDARDS;
 const X = window.DRAWINGS || [];
 const $ = (id) => document.getElementById(id);
 const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
