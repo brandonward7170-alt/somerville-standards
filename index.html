@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPCOR Standards Finder</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1b1f24; --muted:#5d6672; --line:#e2e5ea; --accent:#0a6ebd; --accent-ink:#fff; --warn:#a15c00; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111418; --card:#1a1f26; --text:#e8ebef; --muted:#9aa4b0; --line:#2b323b; --accent:#4aa3e8; --accent-ink:#06121d; --warn:#e0a24a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  header, main { max-width:1000px; margin:0 auto; padding:0 16px; }
+  header { padding-top:28px; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  .sub { color:var(--muted); margin:0 0 18px; }
+  .sub a { color:var(--accent); }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:2; }
+  input, select { font:inherit; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:9px 11px; }
+  input[type=search] { flex:1 1 260px; }
+  label.chk { display:flex; align-items:center; gap:6px; color:var(--muted); }
+  .count { color:var(--muted); margin:6px 0 14px; }
+  h2 { font-size:1.05rem; margin:22px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .item { display:flex; gap:12px; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:8px; }
+  .item .t { font-weight:550; }
+  .meta { color:var(--muted); font-size:.85rem; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; }
+  .badge { border:1px solid var(--line); border-radius:99px; padding:0 8px; font-size:.78rem; }
+  .badge.old { color:var(--warn); border-color:var(--warn); }
+  .actions { display:flex; gap:8px; flex-shrink:0; }
+  a.btn { text-decoration:none; font-weight:550; border-radius:8px; padding:7px 12px; border:1px solid var(--accent); color:var(--accent); }
+  a.btn.primary { background:var(--accent); color:var(--accent-ink); }
+  mark { background:#ffe06655; color:inherit; border-radius:3px; }
+  .empty { text-align:center; color:var(--muted); padding:40px 0; }
+  footer { max-width:1000px; margin:30px auto; padding:0 16px; color:var(--muted); font-size:.85rem; }
+  @media (max-width:560px) { .item { flex-direction:column; align-items:flex-start; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>EPCOR Standards Finder</h1>
+  <p class="sub">Search and download EPCOR Edmonton guides &amp; standards. Source:
+    <a href="https://www.epcor.com/ca/en/ab/edmonton/operations/service-connections/guides-checklists-forms.html" target="_blank" rel="noopener">EPCOR – Guides, checklists and forms</a>. Unofficial index.</p>
+  <div class="controls">
+    <input id="q" type="search" placeholder="Search standards… (e.g. stormwater, volume 7, product list)" autofocus>
+    <select id="utility"><option value="">All utilities</option></select>
+    <select id="group"><option value="">All groups</option></select>
+    <select id="type"><option value="">PDFs &amp; pages</option><option>PDF</option><option>Web page</option></select>
+    <label class="chk"><input id="old" type="checkbox"> Show archived/obsolete</label>
+  </div>
+</header>
+<main>
+  <div class="count" id="count"></div>
+  <div id="list"></div>
+</main>
+<footer>Always confirm you are using the current version on EPCOR's site before relying on a document.</footer>
+<script src="data.js"></script>
+<script>
+const D = window.STANDARDS;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const uniq = (k) => [...new Set(D.map(d => d[k]))];
+uniq("utility").forEach(v => $("utility").add(new Option(v, v)));
+function fillGroups() {
+  const u = $("utility").value, cur = $("group").value;
+  $("group").length = 1;
+  [...new Set(D.filter(d => !u || d.utility === u).map(d => d.group))].forEach(v => $("group").add(new Option(v, v)));
+  if ([...$("group").options].some(o => o.value === cur)) $("group").value = cur;
+}
+function hl(text, terms) {
+  let out = esc(text);
+  terms.forEach(t => { out = out.replace(new RegExp("(" + t.replace(/[.*+?^$\{}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>"); });
+  return out;
+}
+function render() {
+  const terms = $("q").value.toLowerCase().split(/\s+/).filter(Boolean);
+  const rows = D.filter(d => {
+    if ($("utility").value && d.utility !== $("utility").value) return false;
+    if ($("group").value && d.group !== $("group").value) return false;
+    if ($("type").value && d.type !== $("type").value) return false;
+    if (!$("old").checked && d.status !== "Current") return false;
+    const hay = (d.title + " " + d.group + " " + d.utility + " " + d.status).toLowerCase();
+    return terms.every(t => hay.includes(t));
+  });
+  $("count").textContent = rows.length + " document" + (rows.length === 1 ? "" : "s");
+  if (!rows.length) { $("list").innerHTML = '<div class="empty">No matches. Try fewer words or tick “Show archived/obsolete”.</div>'; return; }
+  const sections = {};
+  rows.forEach(r => (sections[r.utility + " › " + r.group] ??= []).push(r));
+  $("list").innerHTML = Object.entries(sections).map(([name, items]) =>
+    "<h2>" + esc(name) + "</h2>" + items.map(d => {
+      const pdf = d.type === "PDF";
+      return '<div class="item"><div><div class="t">' + hl(d.title, terms) + '</div><div class="meta"><span class="badge">' + d.type + '</span>' +
+        (d.status !== "Current" ? '<span class="badge old">' + d.status + '</span>' : "") + '</div></div>' +
+        '<div class="actions"><a class="btn' + (pdf ? "" : " primary") + '" href="' + d.url + '" target="_blank" rel="noopener">' + (pdf ? "View" : "Open") + '</a>' +
+        (pdf ? '<a class="btn primary" href="' + d.url + '" download>Download</a>' : "") + '</div></div>';
+    }).join("")).join("");
+}
+["q","type","old"].forEach(id => $(id).addEventListener("input", render));
+$("group").addEventListener("input", render);
+$("utility").addEventListener("input", () => { fillGroups(); render(); });
+fillGroups(); render();
+</script>
+</body>
+</html>
