@@ -22,11 +22,13 @@
   label.chk { display:flex; align-items:center; gap:6px; color:var(--muted); }
   .count { color:var(--muted); margin:6px 0 14px; }
   h2 { font-size:1.05rem; margin:22px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  h3 { font-size:.95rem; color:var(--muted); margin:14px 0 6px; font-weight:600; }
   .item { display:flex; gap:12px; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:8px; }
   .item .t { font-weight:550; }
   .meta { color:var(--muted); font-size:.85rem; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; }
   .badge { border:1px solid var(--line); border-radius:99px; padding:0 8px; font-size:.78rem; }
   .badge.old { color:var(--warn); border-color:var(--warn); }
+  .badge.num { font-variant-numeric:tabular-nums; color:var(--text); }
   .actions { display:flex; gap:8px; flex-shrink:0; }
   a.btn { text-decoration:none; font-weight:550; border-radius:8px; padding:7px 12px; border:1px solid var(--accent); color:var(--accent); }
   a.btn.primary { background:var(--accent); color:var(--accent-ink); }
@@ -39,10 +41,10 @@
 <body>
 <header>
   <h1>EPCOR Standards Finder</h1>
-  <p class="sub">Search and download EPCOR Edmonton guides &amp; standards. Source:
+  <p class="sub">Search and download EPCOR Edmonton guides &amp; standards, or find an individual drawing by keyword or standard number. Source:
     <a href="https://www.epcor.com/ca/en/ab/edmonton/operations/service-connections/guides-checklists-forms.html" target="_blank" rel="noopener">EPCOR – Guides, checklists and forms</a>. Unofficial index.</p>
   <div class="controls">
-    <input id="q" type="search" placeholder="Search standards… (e.g. stormwater, volume 7, product list)" autofocus>
+    <input id="q" type="search" placeholder="Keyword or standard no. (e.g. typical service box, 66 00 07 02 48 001, WA-005-001)" autofocus>
     <select id="utility"><option value="">All utilities</option></select>
     <select id="group"><option value="">All groups</option></select>
     <select id="type"><option value="">PDFs &amp; pages</option><option>PDF</option><option>Web page</option></select>
@@ -53,12 +55,17 @@
   <div class="count" id="count"></div>
   <div id="list"></div>
 </main>
-<footer>Always confirm you are using the current version on EPCOR's site before relying on a document.</footer>
+<footer>Always confirm you are using the current version on EPCOR's site before relying on a document. Drawing index covers Power Volume 7 (2026, 2024), the Power Customer Connection Guide and Water Volume 4 (2024).</footer>
 <script src="data.js"></script>
+<script src="drawings.js"></script>
 <script>
 const D = window.STANDARDS;
+const X = window.DRAWINGS || [];
 const $ = (id) => document.getElementById(id);
 const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+const DOC = {};
+D.forEach(d => { DOC[decodeURIComponent(d.url.split("/").pop()).replace(/​/g, "")] = d; });
 const uniq = (k) => [...new Set(D.map(d => d[k]))];
 uniq("utility").forEach(v => $("utility").add(new Option(v, v)));
 function fillGroups() {
@@ -72,28 +79,60 @@ function hl(text, terms) {
   terms.forEach(t => { out = out.replace(new RegExp("(" + t.replace(/[.*+?^$\{}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>"); });
   return out;
 }
+function pages(p) { return p.length > 1 ? "pp. " + p[0] + "–" + p[p.length - 1] : "p. " + p[0]; }
+function docVisible(d) {
+  if ($("utility").value && d.utility !== $("utility").value) return false;
+  if ($("group").value && d.group !== $("group").value) return false;
+  if ($("type").value && d.type !== $("type").value) return false;
+  return $("old").checked || d.status === "Current";
+}
+function drawingRows(raw, terms) {
+  if (!terms.length) return [];
+  const q = norm(raw);
+  const base = X.filter(x => DOC[x.f] && docVisible(DOC[x.f]));
+  if (q.length >= 3 && /\d/.test(q)) {
+    const byNum = base.filter(x => norm(x.n + (x.a || []).join("")).includes(q) || (x.a || []).some(a => norm(a).includes(q)));
+    if (byNum.length) return byNum;
+  }
+  return base.filter(x => {
+    const hay = (x.t + " " + x.n + " " + (x.a || []).join(" ") + " " + x.k).toLowerCase();
+    return terms.every(t => hay.includes(t));
+  });
+}
 function render() {
-  const terms = $("q").value.toLowerCase().split(/\s+/).filter(Boolean);
+  const raw = $("q").value;
+  const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
   const rows = D.filter(d => {
-    if ($("utility").value && d.utility !== $("utility").value) return false;
-    if ($("group").value && d.group !== $("group").value) return false;
-    if ($("type").value && d.type !== $("type").value) return false;
-    if (!$("old").checked && d.status !== "Current") return false;
+    if (!docVisible(d)) return false;
     const hay = (d.title + " " + d.group + " " + d.utility + " " + d.status).toLowerCase();
     return terms.every(t => hay.includes(t));
   });
-  $("count").textContent = rows.length + " document" + (rows.length === 1 ? "" : "s");
-  if (!rows.length) { $("list").innerHTML = '<div class="empty">No matches. Try fewer words or tick “Show archived/obsolete”.</div>'; return; }
+  const dr = drawingRows(raw, terms);
+  $("count").textContent = (dr.length ? dr.length + " drawing" + (dr.length === 1 ? "" : "s") + " · " : "") + rows.length + " document" + (rows.length === 1 ? "" : "s");
+  if (!rows.length && !dr.length) { $("list").innerHTML = '<div class="empty">No matches. Try fewer words or tick “Show archived/obsolete”.</div>'; return; }
+  let html = "";
+  if (dr.length) {
+    html += "<h2>Drawings &amp; standards</h2>" + dr.slice(0, 150).map(x => {
+      const d = DOC[x.f], url = d.url + "#page=" + x.p[0];
+      const alias = (x.a || []).map(a => '<span class="badge num">' + hl(a, terms) + "</span>").join("");
+      return '<div class="item"><div><div class="t">' + hl(x.t || "(untitled)", terms) + '</div><div class="meta"><span class="badge num">' + hl(x.n, terms) + "</span>" + alias +
+        "<span>" + esc(d.title.replace(/ \(.*$/, "")) + " · " + pages(x.p) + "</span>" +
+        (d.status !== "Current" ? '<span class="badge old">' + d.status + "</span>" : "") + "</div></div>" +
+        '<div class="actions"><a class="btn primary" href="' + url + '" target="_blank" rel="noopener">View p. ' + x.p[0] + "</a></div></div>";
+    }).join("") + (dr.length > 150 ? '<div class="empty">Showing first 150 — refine your search.</div>' : "");
+  }
   const sections = {};
   rows.forEach(r => (sections[r.utility + " › " + r.group] ??= []).push(r));
-  $("list").innerHTML = Object.entries(sections).map(([name, items]) =>
-    "<h2>" + esc(name) + "</h2>" + items.map(d => {
+  if (rows.length && dr.length) html += "<h2>Complete documents</h2>";
+  html += Object.entries(sections).map(([name, items]) =>
+    (dr.length ? "<h3>" : "<h2>") + esc(name) + (dr.length ? "</h3>" : "</h2>") + items.map(d => {
       const pdf = d.type === "PDF";
       return '<div class="item"><div><div class="t">' + hl(d.title, terms) + '</div><div class="meta"><span class="badge">' + d.type + '</span>' +
         (d.status !== "Current" ? '<span class="badge old">' + d.status + '</span>' : "") + '</div></div>' +
         '<div class="actions"><a class="btn' + (pdf ? "" : " primary") + '" href="' + d.url + '" target="_blank" rel="noopener">' + (pdf ? "View" : "Open") + '</a>' +
         (pdf ? '<a class="btn primary" href="' + d.url + '" download>Download</a>' : "") + '</div></div>';
     }).join("")).join("");
+  $("list").innerHTML = html;
 }
 ["q","type","old"].forEach(id => $(id).addEventListener("input", render));
 $("group").addEventListener("input", render);
