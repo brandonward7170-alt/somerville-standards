@@ -2,7 +2,7 @@
 // in-page preview, and it blocks framing. Only EPCOR document URLs are allowed; Range is forwarded.
 const { Readable } = require("stream");
 
-const ALLOWED = /^https:\/\/www\.epcor\.com\/content\/dam\/epcor\/documents\/[^?#]+\.pdf$/i;
+const ALLOWED = /^https:\/\/(www\.epcor\.com\/content\/dam\/epcor\/documents|app\.bchydro\.com\/content\/dam\/BCHydro\/customer-portal\/documents\/distribution\/standards)\/[^?#]+\.pdf$/i;
 
 module.exports = async (req, res) => {
   const u = req.query.u;
