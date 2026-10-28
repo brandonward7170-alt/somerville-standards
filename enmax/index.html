@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENMAX · Somerville Standards</title>
+<style>
+  :root { --bg:#f3f4f6; --card:#fff; --text:#16181b; --muted:#5b636d; --line:#dcdfe4; --accent:#c8102e; --accent-ink:#fff; --warn:#a15c00; --band:#fff; }
+  :root[data-theme="dark"] { --bg:#0c0d0f; --card:#17191d; --text:#eceef1; --muted:#9aa2ad; --line:#2a2d33; --accent:#e5384a; --accent-ink:#fff; --warn:#e0a24a; --band:#000; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  .band { background:var(--band); }
+  .band .in { max-width:1000px; margin:0 auto; position:relative; }
+  .band img { display:block; width:100%; height:auto; }
+  #theme { position:absolute; right:12px; top:12px; font:inherit; font-weight:550; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:99px; padding:6px 12px; cursor:pointer; }
+  #theme:hover { border-color:var(--accent); }
+  header, main { max-width:1000px; margin:0 auto; padding:0 16px; }
+  header { padding-top:20px; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  .back { margin:0 0 6px; } .back a { color:var(--accent); text-decoration:none; font-weight:550; }
+  .sub { color:var(--muted); margin:0 0 18px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:2; }
+  input, select { font:inherit; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:9px 11px; }
+  input[type=search] { flex:1 1 260px; }
+  .count { color:var(--muted); margin:6px 0 14px; }
+  h2 { font-size:1.05rem; margin:22px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .item { display:flex; gap:12px; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:8px; }
+  .item .t { font-weight:550; }
+  .meta { color:var(--muted); font-size:.85rem; margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; }
+  .badge { border:1px solid var(--line); border-radius:99px; padding:0 8px; font-size:.78rem; }
+  .badge.num { font-variant-numeric:tabular-nums; color:var(--text); }
+  .actions { display:flex; gap:8px; flex-shrink:0; }
+  button.btn { font:inherit; font-weight:550; cursor:pointer; border-radius:8px; padding:7px 12px; border:1px solid var(--accent); color:var(--accent); background:transparent; }
+  mark { background:#ffe06655; color:inherit; border-radius:3px; }
+  .empty { text-align:center; color:var(--muted); padding:40px 0; }
+  .note { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--warn); border-radius:8px; padding:9px 12px; color:var(--muted); font-size:.88rem; margin:0 0 6px; }
+  footer { max-width:1000px; margin:30px auto; padding:0 16px; color:var(--muted); font-size:.85rem; }
+  @media (max-width:560px) { .item { flex-direction:column; align-items:flex-start; } }
+</style>
+</head>
+<body>
+<div class="band"><div class="in"><img id="logo" alt="Somerville" src=""><button id="theme" type="button" aria-label="Toggle light or dark mode"></button></div></div>
+<header>
+  <p class="back"><a href="/">&larr; All clients</a></p>
+  <h1>ENMAX Standards</h1>
+  <p class="sub">Search the ENMAX EPC specs and guidelines (50 drawings and guides) by number or keyword.</p>
+  <p class="note">Index only. Results show the file and page in the Somerville OneDrive copy (3. ENMAX MSA\EPC Spec's &amp; Guidelines). The PDFs are not hosted on this site, so use Copy path to find the file.</p>
+  <div class="controls">
+    <input id="q" type="search" placeholder="Keyword or number (e.g. 6320, precast manhole, grounding)" autofocus>
+    
+  </div>
+</header>
+<main>
+  <div class="count" id="count"></div>
+  <div id="list"></div>
+</main>
+<footer>Index built from the 50 PDFs in the folder. Always confirm you are using the current version from the client before relying on a document.</footer>
+<script src="../theme.js"></script>
+<script src="data.js"></script>
+<script>
+const root = document.documentElement;
+let theme; try { theme = localStorage.getItem("theme"); } catch (e) {}
+if (!theme) theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+function applyTheme() {
+  root.dataset.theme = theme;
+  document.getElementById("logo").src = window.THEME[theme];
+  document.getElementById("theme").textContent = theme === "dark" ? "☀ Light mode" : "☾ Dark mode";
+}
+document.getElementById("theme").addEventListener("click", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem("theme", theme); } catch (e) {}
+  applyTheme();
+});
+let ic = document.createElement("link"); ic.rel = "icon"; ic.href = window.THEME.icon; document.head.appendChild(ic);
+applyTheme();
+
+const ROOT = "C:\\OneDrive\\2026 Utilities Projects - Documents\\MSA Contracts\\3. ENMAX MSA\\EPC Spec\u0027s \u0026 Guidelines";
+const DATA = window.CLIENT;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+const BOOKS = DATA.books || [];
+const ITEMS = DATA.items.map(x => BOOKS.length ? { ...x, book: BOOKS[x.b] } : x);
+if ($("book")) BOOKS.forEach((b, i) => $("book").add(new Option(b.a + " (" + b.n + " pp.)", i)));
+function hl(text, terms) {
+  let out = esc(text);
+  terms.forEach(t => { out = out.replace(new RegExp("(" + t.replace(/[.*+?^$\{}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>"); });
+  return out;
+}
+function visible(x) { return !$("book") || !$("book").value || String(x.b) === $("book").value; }
+const STOP = new Set(["the", "a", "an", "of", "and", "or", "for", "to", "in", "on", "with", "standard", "standards", "drawing", "drawings", "typical"]);
+const stem = (w) => w.length > 4 ? w.replace(/(ies|ing|es|s)$/, (m) => m === "ies" ? "y" : "") : w;
+const toks = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+function lev(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+function termScore(t, words) {
+  const ts = stem(t); let best = 0;
+  for (const k of words) {
+    const ks = stem(k); let s = 0;
+    if (k === t || ks === ts) s = 4;
+    else if (k.startsWith(t) || ks.startsWith(ts)) s = 3;
+    else if (t.length >= 3 && k.includes(t)) s = 2;
+    else if (t.length >= 4 && Math.abs(k.length - t.length) <= 2 && lev(ks, ts) <= (t.length >= 7 ? 2 : 1)) s = 1.5;
+    if (s > best) best = s;
+  }
+  return best;
+}
+function rank(items, text, terms) {
+  const ts = terms.map(t => t.replace(/[^a-z0-9]/g, "")).filter(t => t && !STOP.has(t));
+  if (!ts.length) return { list: items, exact: true };
+  const per = items.map(it => { const w = toks(text(it)); return { it, s: ts.map(t => termScore(t, w)) }; });
+  const wt = ts.map((_, i) => Math.log(1 + items.length / (1 + per.filter(r => r.s[i]).length)));
+  const scored = per.map(r => ({ it: r.it, n: r.s.filter(Boolean).length, sum: r.s.reduce((a, v, i) => a + v * wt[i], 0) })).filter(r => r.n);
+  const byScore = (a, b) => b.n - a.n || b.sum - a.sum;
+  const all = scored.filter(r => r.n === ts.length).sort(byScore);
+  if (all.length) return { list: all.map(r => r.it), exact: true };
+  return { list: scored.sort(byScore).map(r => r.it), exact: false };
+}
+function search(raw, terms) {
+  const base = ITEMS.filter(visible);
+  const q = norm(raw);
+  if (q.length >= 2 && /\d/.test(q)) {
+    const byNum = base.filter(x => norm(x.n).startsWith(q) || norm(x.n) === q);
+    if (byNum.length) return { list: byNum, exact: true };
+  }
+  // titles count most: repeat them so they outrank body text
+  return rank(base, x => x.n + " " + x.t + " " + x.t + " " + (x.s || "") + " " + (x.k || ""), terms);
+}
+function where(x) { return x.book ? x.book.t + " · p. " + x.p : x.f + " (" + x.pg + (x.pg === 1 ? " page)" : " pages)"); }
+function pathOf(x) { return ROOT + "\\" + (x.book ? x.book.f : x.f); }
+function render() {
+  const raw = $("q").value;
+  const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
+  const r = search(raw, terms);
+  $("count").textContent = (!r.exact && r.list.length ? "No exact match for “" + raw.trim() + "” — showing closest results · " : "") + r.list.length + " result" + (r.list.length === 1 ? "" : "s");
+  if (!r.list.length) { $("list").innerHTML = '<div class="empty">No matches. Try fewer words.</div>'; return; }
+  window.__shown = r.list.slice(0, 150);
+  $("list").innerHTML = window.__shown.map((x, i) =>
+    '<div class="item"><div><div class="t">' + hl(x.t || "(untitled)", terms) + '</div><div class="meta">' +
+    (x.n ? '<span class="badge num">' + hl(x.n, terms) + "</span>" : "") +
+    (x.book ? '<span class="badge">' + esc(x.book.a) + "</span>" : "") +
+    "<span>" + esc(where(x)) + "</span>" + (x.s ? "<span>" + esc(x.s) + "</span>" : "") + '</div></div>' +
+    '<div class="actions"><button class="btn" type="button" data-i="' + i + '">Copy path</button></div></div>'
+  ).join("") + (r.list.length > 150 ? '<div class="empty">Showing first 150 — refine your search.</div>' : "");
+}
+["q", "book"].forEach(id => $(id) && $(id).addEventListener("input", render));
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-i]"); if (!b) return;
+  const x = window.__shown[+b.dataset.i], txt = pathOf(x) + (x.p ? "  (page " + x.p + ")" : "");
+  try { await navigator.clipboard.writeText(txt); b.textContent = "Copied"; } catch (err) { b.textContent = "Copy failed"; }
+  setTimeout(() => b.textContent = "Copy path", 1500);
+});
+render();
+</script>
+</body>
+</html>
