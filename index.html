@@ -3,93 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Somerville · EPCOR Standards Finder</title>
+<title>Somerville Standards</title>
 <style>
-  :root { --bg:#f3f4f6; --card:#fff; --text:#16181b; --muted:#5b636d; --line:#dcdfe4; --accent:#c8102e; --accent-ink:#fff; --warn:#a15c00; --band:#fff; }
-  :root[data-theme="dark"] { --bg:#0c0d0f; --card:#17191d; --text:#eceef1; --muted:#9aa2ad; --line:#2a2d33; --accent:#e5384a; --accent-ink:#fff; --warn:#e0a24a; --band:#000; }
+  :root { --bg:#f3f4f6; --card:#fff; --text:#16181b; --muted:#5b636d; --line:#dcdfe4; --accent:#c8102e; --accent-ink:#fff; --band:#fff; }
+  :root[data-theme="dark"] { --bg:#0c0d0f; --card:#17191d; --text:#eceef1; --muted:#9aa2ad; --line:#2a2d33; --accent:#e5384a; --accent-ink:#fff; --band:#000; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
   .band { background:var(--band); }
   .band .in { max-width:1000px; margin:0 auto; position:relative; }
   .band img { display:block; width:100%; height:auto; }
   #theme { position:absolute; right:12px; top:12px; font:inherit; font-weight:550; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:99px; padding:6px 12px; cursor:pointer; }
-  #theme:hover { border-color:var(--accent); }  * { box-sizing: border-box; }
-  body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  #theme:hover { border-color:var(--accent); }
   header, main { max-width:1000px; margin:0 auto; padding:0 16px; }
   header { padding-top:20px; }
   h1 { margin:0 0 4px; font-size:1.6rem; }
   .sub { color:var(--muted); margin:0 0 18px; }
-  .sub a { color:var(--accent); }
-  .controls { display:flex; flex-wrap:wrap; gap:10px; position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:2; }
-  input, select { font:inherit; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:9px 11px; }
-  input[type=search] { flex:1 1 260px; }
-  label.chk { display:flex; align-items:center; gap:6px; color:var(--muted); }
-  .count { color:var(--muted); margin:6px 0 14px; }
-  h2 { font-size:1.05rem; margin:22px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
-  h3 { font-size:.95rem; color:var(--muted); margin:14px 0 6px; font-weight:600; }
-  .item { display:flex; gap:12px; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:8px; }
-  .item .t { font-weight:550; }
-  .meta { color:var(--muted); font-size:.85rem; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; }
-  .badge { border:1px solid var(--line); border-radius:99px; padding:0 8px; font-size:.78rem; }
-  .badge.old { color:var(--warn); border-color:var(--warn); }
-  .badge.num { font-variant-numeric:tabular-nums; color:var(--text); }
-  .actions { display:flex; gap:8px; flex-shrink:0; }
-  a.btn { text-decoration:none; font-weight:550; border-radius:8px; padding:7px 12px; border:1px solid var(--accent); color:var(--accent); }
-  a.btn.primary { background:var(--accent); color:var(--accent-ink); }
-  mark { background:#ffe06655; color:inherit; border-radius:3px; }
-  .empty { text-align:center; color:var(--muted); padding:40px 0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin:8px 0 30px; }
+  a.card, .card.soon { display:flex; flex-direction:column; gap:6px; text-decoration:none; color:inherit; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; min-height:150px; }
+  a.card:hover, a.card:focus-visible { border-color:var(--accent); outline:none; box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .card .name { font-size:1.2rem; font-weight:650; }
+  .card .desc { color:var(--muted); flex:1; }
+  .card .go { color:var(--accent); font-weight:600; }
+  .card.soon { border-style:dashed; color:var(--muted); cursor:default; }
+  .card.soon:hover { border-color:var(--line); box-shadow:none; }
   footer { max-width:1000px; margin:30px auto; padding:0 16px; color:var(--muted); font-size:.85rem; }
-  button.btn { font:inherit; font-weight:550; cursor:pointer; border-radius:8px; padding:7px 12px; border:1px solid var(--accent); color:var(--accent); background:transparent; }
-  button.btn.primary { background:var(--accent); color:var(--accent-ink); }
-  button.btn:disabled { opacity:.6; cursor:wait; }
-  #pv { position:fixed; inset:0; z-index:10; background:rgba(0,0,0,.65); display:none; align-items:center; justify-content:center; padding:12px; }
-  #pv.open { display:flex; }
-  #pv .box { background:var(--card); border:1px solid var(--line); border-radius:12px; width:min(1000px,100%); height:100%; display:flex; flex-direction:column; overflow:hidden; }
-  #pv .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--line); }
-  #pv .ttl { flex:1 1 240px; min-width:0; }
-  #pv .ttl b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #pv .ttl span { color:var(--muted); font-size:.85rem; }
-  #pv .pg { display:flex; align-items:center; gap:6px; color:var(--muted); }
-  #pv .pg input { width:62px; padding:6px 8px; }
-  #pv .view { flex:1; overflow:auto; background:var(--bg); text-align:center; padding:12px; }
-  #pv canvas { max-width:100%; height:auto; background:#fff; box-shadow:0 2px 12px rgba(0,0,0,.35); }
-  #pv .msg { color:var(--muted); padding:30px 0; }
-  @media (max-width:560px) { .item { flex-direction:column; align-items:flex-start; } }
 </style>
 </head>
 <body>
 <div class="band"><div class="in"><img id="logo" alt="Somerville" src=""><button id="theme" type="button" aria-label="Toggle light or dark mode"></button></div></div>
 <header>
-  <h1>EPCOR Standards Finder</h1>
-  <p class="sub">Search and download EPCOR Edmonton guides &amp; standards, or find an individual drawing by keyword or standard number. Source:
-    <a href="https://www.epcor.com/ca/en/ab/edmonton/operations/service-connections/guides-checklists-forms.html" target="_blank" rel="noopener">EPCOR – Guides, checklists and forms</a>. Unofficial index.</p>
-  <div class="controls">
-    <input id="q" type="search" placeholder="Keyword or standard no. (e.g. typical service box, 66 00 07 02 48 001, WA-005-001)" autofocus>
-    <select id="utility"><option value="">All utilities</option></select>
-    <select id="group"><option value="">All groups</option></select>
-    <select id="type"><option value="">PDFs &amp; pages</option><option>PDF</option><option>Web page</option></select>
-    <label class="chk"><input id="old" type="checkbox"> Show archived/obsolete</label>
-  </div>
+  <h1>Somerville Standards</h1>
+  <p class="sub">Choose a client to search, preview and download their construction standards and drawings. Unofficial index.</p>
 </header>
 <main>
-  <div class="count" id="count"></div>
-  <div id="list"></div>
-</main>
-<footer>Always confirm you are using the current version on EPCOR's site before relying on a document. Drawing index covers Power Volume 7 (2026, 2024), the Power Customer Connection Guide and Water Volume 4 (2024).</footer>
-<div id="pv" role="dialog" aria-modal="true" aria-label="Preview">
-  <div class="box">
-    <div class="bar">
-      <div class="ttl"><b id="pvT"></b><span id="pvS"></span></div>
-      <div class="pg"><button class="btn" id="pvPrev" type="button" aria-label="Previous page">‹</button><input id="pvN" type="number" min="1" value="1"><span id="pvC"></span><button class="btn" id="pvNext" type="button" aria-label="Next page">›</button></div>
-      <a class="btn" id="pvOpen" target="_blank" rel="noopener">Open full PDF</a>
-      <button class="btn primary" id="pvDl" type="button">Download</button>
-      <button class="btn" id="pvX" type="button" aria-label="Close">✕</button>
+  <div class="grid">
+    <a class="card" href="/epcor/">
+      <span class="name">EPCOR</span>
+      <span class="desc">Edmonton water, drainage and power design standards, connection guides, and individual drawings searchable by keyword or standard number.</span>
+      <span class="go">Open EPCOR standards &rarr;</span>
+    </a>
+    <a class="card" href="https://bc-hydro-standards-app.vercel.app/">
+      <span class="name">BC Hydro</span>
+      <span class="desc">Distribution standards: ES43 overhead, ES53 electrical and ES54 underground civil, with plain-language search.</span>
+      <span class="go">Open BC Hydro standards &rarr;</span>
+    </a>
+    <div class="card soon">
+      <span class="name">More clients</span>
+      <span class="desc">Additional utilities will be added here.</span>
     </div>
-    <div class="view" id="pvV"><div class="msg" id="pvM"></div><canvas id="pvCv" hidden></canvas></div>
   </div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</main>
+<footer>Always confirm you are using the current version on the client's own site before relying on a document.</footer>
 <script src="theme.js"></script>
-<script src="data.js"></script>
-<script src="drawings.js"></script>
 <script>
 const root = document.documentElement;
 let theme; try { theme = localStorage.getItem("theme"); } catch (e) {}
@@ -105,182 +70,7 @@ document.getElementById("theme").addEventListener("click", () => {
   applyTheme();
 });
 let ic = document.createElement("link"); ic.rel = "icon"; ic.href = window.THEME.icon; document.head.appendChild(ic);
-applyTheme();const D = window.STANDARDS;
-const X = window.DRAWINGS || [];
-const $ = (id) => document.getElementById(id);
-const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
-const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-const DOC = {};
-D.forEach(d => { DOC[decodeURIComponent(d.url.split("/").pop()).replace(/​/g, "")] = d; });
-const uniq = (k) => [...new Set(D.map(d => d[k]))];
-uniq("utility").forEach(v => $("utility").add(new Option(v, v)));
-function fillGroups() {
-  const u = $("utility").value, cur = $("group").value;
-  $("group").length = 1;
-  [...new Set(D.filter(d => !u || d.utility === u).map(d => d.group))].forEach(v => $("group").add(new Option(v, v)));
-  if ([...$("group").options].some(o => o.value === cur)) $("group").value = cur;
-}
-function hl(text, terms) {
-  let out = esc(text);
-  terms.forEach(t => { out = out.replace(new RegExp("(" + t.replace(/[.*+?^$\{}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>"); });
-  return out;
-}
-function pages(p) { return p.length > 1 ? "pp. " + p[0] + "–" + p[p.length - 1] : "p. " + p[0]; }
-function docVisible(d) {
-  if ($("utility").value && d.utility !== $("utility").value) return false;
-  if ($("group").value && d.group !== $("group").value) return false;
-  if ($("type").value && d.type !== $("type").value) return false;
-  return $("old").checked || d.status === "Current";
-}
-const STOP = new Set(["the", "a", "an", "of", "and", "or", "for", "to", "in", "on", "with", "standard", "standards", "drawing", "drawings"]);
-const stem = (w) => w.length > 4 ? w.replace(/(ies|ing|es|s)$/, (m) => m === "ies" ? "y" : "") : w;
-const toks = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-function lev(a, b) {
-  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    const cur = [i];
-    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-    prev = cur;
-  }
-  return prev[b.length];
-}
-function termScore(t, words) {
-  const ts = stem(t); let best = 0;
-  for (const k of words) {
-    const ks = stem(k); let s = 0;
-    if (k === t || ks === ts) s = 4;
-    else if (k.startsWith(t) || ks.startsWith(ts)) s = 3;
-    else if (t.length >= 3 && k.includes(t)) s = 2;
-    else if (t.length >= 4 && Math.abs(k.length - t.length) <= 2 && lev(ks, ts) <= (t.length >= 7 ? 2 : 1)) s = 1.5;
-    if (s > best) best = s;
-  }
-  return best;
-}
-// Every term must match (exact). If nothing does, fall back to items matching any term, best first.
-function rank(items, text, terms) {
-  const ts = terms.map(t => t.replace(/[^a-z0-9]/g, "")).filter(t => t && !STOP.has(t));
-  if (!ts.length) return { list: items, exact: true };
-  const per = items.map(it => { const w = toks(text(it)); return { it, s: ts.map(t => termScore(t, w)) }; });
-  // rarer terms count for more, so "transformers pad" favours transformer drawings over any pad
-  const wt = ts.map((_, i) => Math.log(1 + items.length / (1 + per.filter(r => r.s[i]).length)));
-  const scored = per.map(r => ({ it: r.it, n: r.s.filter(Boolean).length, sum: r.s.reduce((a, v, i) => a + v * wt[i], 0) })).filter(r => r.n);
-  const byScore = (a, b) => b.n - a.n || b.sum - a.sum;
-  const all = scored.filter(r => r.n === ts.length).sort(byScore);
-  if (all.length) return { list: all.map(r => r.it), exact: true };
-  return { list: scored.sort(byScore).map(r => r.it), exact: false };
-}
-function drawingRows(raw, terms) {
-  if (!terms.length) return { list: [], exact: true };
-  const q = norm(raw);
-  const base = X.filter(x => DOC[x.f] && docVisible(DOC[x.f]));
-  if (q.length >= 3 && /\d/.test(q)) {
-    const byNum = base.filter(x => norm(x.n + (x.a || []).join("")).includes(q) || (x.a || []).some(a => norm(a).includes(q)));
-    if (byNum.length) return { list: byNum, exact: true };
-  }
-  return rank(base, x => x.t + " " + x.n + " " + (x.a || []).join(" ") + " " + x.k, terms);
-}
-function render() {
-  const raw = $("q").value;
-  const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
-  const docsR = rank(D.filter(docVisible), d => d.title + " " + d.group + " " + d.utility + " " + d.status, terms);
-  const drR = drawingRows(raw, terms);
-  const fuzzy = !docsR.exact && !drR.exact;
-  const rows = docsR.exact || fuzzy ? docsR.list : [];
-  const dr = drR.exact || fuzzy ? drR.list : [];
-  $("count").textContent = (fuzzy && (rows.length || dr.length) ? "No exact match for “" + raw.trim() + "” — showing closest results · " : "") +
-    (dr.length ? dr.length + " drawing" + (dr.length === 1 ? "" : "s") + " · " : "") + rows.length + " document" + (rows.length === 1 ? "" : "s");
-  if (!rows.length && !dr.length) { $("list").innerHTML = '<div class="empty">No matches. Try fewer words or tick “Show archived/obsolete”.</div>'; return; }
-  let html = "";
-  if (dr.length) {
-    html += "<h2>Drawings &amp; standards</h2>" + dr.slice(0, 150).map(x => {
-      const d = DOC[x.f], url = d.url + "#page=" + x.p[0];
-      const alias = (x.a || []).map(a => '<span class="badge num">' + hl(a, terms) + "</span>").join("");
-      return '<div class="item"><div><div class="t">' + hl(x.t || "(untitled)", terms) + '</div><div class="meta"><span class="badge num">' + hl(x.n, terms) + "</span>" + alias +
-        "<span>" + esc(d.title.replace(/ \(.*$/, "")) + " · " + pages(x.p) + "</span>" +
-        (d.status !== "Current" ? '<span class="badge old">' + d.status + "</span>" : "") + "</div></div>" +
-        '<div class="actions"><button class="btn primary" type="button" data-pv="' + esc(d.url) + '" data-page="' + x.p[0] + '" data-title="' + esc(x.n + " · " + (x.t || "")) + '" data-sub="' + esc(d.title.replace(/ \(.*$/, "")) + '">Preview p. ' + x.p[0] + '</button>' +
-        '<a class="btn" href="' + url + '" target="_blank" rel="noopener">Open</a>' +
-        '<button class="btn" type="button" data-dl="' + esc(d.url) + '">Download</button></div></div>';
-    }).join("") + (dr.length > 150 ? '<div class="empty">Showing first 150 — refine your search.</div>' : "");
-  }
-  const sections = {};
-  rows.forEach(r => (sections[r.utility + " › " + r.group] ??= []).push(r));
-  if (rows.length && dr.length) html += "<h2>Complete documents</h2>";
-  html += Object.entries(sections).map(([name, items]) =>
-    (dr.length ? "<h3>" : "<h2>") + esc(name) + (dr.length ? "</h3>" : "</h2>") + items.map(d => {
-      const pdf = d.type === "PDF";
-      return '<div class="item"><div><div class="t">' + hl(d.title, terms) + '</div><div class="meta"><span class="badge">' + d.type + '</span>' +
-        (d.status !== "Current" ? '<span class="badge old">' + d.status + '</span>' : "") + '</div></div>' +
-        '<div class="actions">' +
-        (pdf ? '<button class="btn primary" type="button" data-pv="' + esc(d.url) + '" data-page="1" data-title="' + esc(d.title) + '" data-sub="Complete document">Preview</button>' : "") +
-        '<a class="btn' + (pdf ? "" : " primary") + '" href="' + d.url + '" target="_blank" rel="noopener">' + (pdf ? "Open" : "Open") + '</a>' +
-        (pdf ? '<button class="btn" type="button" data-dl="' + esc(d.url) + '">Download</button>' : "") + '</div></div>';
-    }).join("")).join("");
-  $("list").innerHTML = html;
-}
-["q","type","old"].forEach(id => $(id).addEventListener("input", render));
-$("group").addEventListener("input", render);
-$("utility").addEventListener("input", () => { fillGroups(); render(); });
-fillGroups(); render();
-
-// Preview / download. EPCOR blocks framing but allows cross-origin reads, so PDFs are drawn with PDF.js.
-if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-let pdf = null, pdfUrl = "", pg = 1, token = 0;
-const pv = $("pv"), cv = $("pvCv");
-function pvMsg(t) { $("pvM").textContent = t; $("pvM").hidden = !t; cv.hidden = !!t; }
-async function showPage(n) {
-  if (!pdf) return;
-  pg = Math.min(Math.max(1, n), pdf.numPages);
-  $("pvN").value = pg; $("pvC").textContent = "of " + pdf.numPages;
-  const my = ++token;
-  const page = await pdf.getPage(pg);
-  if (my !== token) return;
-  const w = $("pvV").clientWidth - 24, base = page.getViewport({ scale: 1 }), dpr = window.devicePixelRatio || 1;
-  const vp = page.getViewport({ scale: Math.min(2.5, Math.max(0.5, w / base.width)) * dpr });
-  cv.width = vp.width; cv.height = vp.height; cv.style.width = vp.width / dpr + "px";
-  await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
-  if (my === token) { pvMsg(""); $("pvV").scrollTop = 0; }
-}
-async function openPreview(url, page, title, sub) {
-  pv.classList.add("open");
-  $("pvT").textContent = title; $("pvS").textContent = sub;
-  $("pvOpen").href = url + "#page=" + page; $("pvDl").dataset.dl = url;
-  $("pvC").textContent = ""; pvMsg("Loading preview…");
-  try {
-    if (pdfUrl !== url) {
-      pdf = null;
-      try { pdf = await pdfjsLib.getDocument({ url: "/api/pdf?u=" + encodeURIComponent(url) }).promise; }
-      catch (e) { pdf = await pdfjsLib.getDocument({ url }).promise; }
-      pdfUrl = url;
-    }
-    await showPage(page);
-  } catch (e) {
-    pdf = null; pdfUrl = "";
-    pvMsg("Preview unavailable here. Use “Open full PDF” or Download.");
-  }
-}
-function download(url) {
-  const a = document.createElement("a");
-  a.href = "/api/pdf?dl=1&u=" + encodeURIComponent(url);
-  document.body.appendChild(a); a.click(); a.remove();
-}
-function closePreview() { pv.classList.remove("open"); token++; }
-document.addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.pv) openPreview(b.dataset.pv, +b.dataset.page, b.dataset.title, b.dataset.sub);
-  else if (b.dataset.dl) download(b.dataset.dl);
-});
-$("pvX").addEventListener("click", closePreview);
-pv.addEventListener("click", (e) => { if (e.target === pv) closePreview(); });
-document.addEventListener("keydown", (e) => {
-  if (!pv.classList.contains("open")) return;
-  if (e.key === "Escape") closePreview();
-  else if (e.target.tagName !== "INPUT" && e.key === "ArrowRight") showPage(pg + 1);
-  else if (e.target.tagName !== "INPUT" && e.key === "ArrowLeft") showPage(pg - 1);
-});
-$("pvPrev").addEventListener("click", () => showPage(pg - 1));
-$("pvNext").addEventListener("click", () => showPage(pg + 1));
-$("pvN").addEventListener("change", () => showPage(+$("pvN").value || 1));
+applyTheme();
 </script>
 </body>
 </html>
