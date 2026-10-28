@@ -213,30 +213,28 @@ async function openPreview(url, page, title, sub) {
   $("pvOpen").href = url + "#page=" + page; $("pvDl").dataset.dl = url;
   $("pvC").textContent = ""; pvMsg("Loading preview…");
   try {
-    if (pdfUrl !== url) { pdf = null; pdf = await pdfjsLib.getDocument({ url }).promise; pdfUrl = url; }
+    if (pdfUrl !== url) {
+      pdf = null;
+      try { pdf = await pdfjsLib.getDocument({ url: "/api/pdf?u=" + encodeURIComponent(url) }).promise; }
+      catch (e) { pdf = await pdfjsLib.getDocument({ url }).promise; }
+      pdfUrl = url;
+    }
     await showPage(page);
   } catch (e) {
     pdf = null; pdfUrl = "";
     pvMsg("Preview unavailable here. Use “Open full PDF” or Download.");
   }
 }
-async function download(url, btn) {
-  const label = btn.textContent; btn.disabled = true; btn.textContent = "Downloading…";
-  try {
-    const r = await fetch(url); if (!r.ok) throw 0;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(await r.blob());
-    a.download = decodeURIComponent(url.split("/").pop()).replace(/​/g, "");
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-  } catch (e) { window.open(url, "_blank", "noopener"); }
-  btn.disabled = false; btn.textContent = label;
+function download(url) {
+  const a = document.createElement("a");
+  a.href = "/api/pdf?dl=1&u=" + encodeURIComponent(url);
+  document.body.appendChild(a); a.click(); a.remove();
 }
 function closePreview() { pv.classList.remove("open"); token++; }
 document.addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.pv) openPreview(b.dataset.pv, +b.dataset.page, b.dataset.title, b.dataset.sub);
-  else if (b.dataset.dl) download(b.dataset.dl, b);
+  else if (b.dataset.dl) download(b.dataset.dl);
 });
 $("pvX").addEventListener("click", closePreview);
 pv.addEventListener("click", (e) => { if (e.target === pv) closePreview(); });
