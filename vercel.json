@@ -1,0 +1,3 @@
+vercel.json{
+  "functions": { "api/pdf.js": { "maxDuration": 60 } }
+}
