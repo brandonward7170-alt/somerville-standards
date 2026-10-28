@@ -132,29 +132,63 @@ function docVisible(d) {
   if ($("type").value && d.type !== $("type").value) return false;
   return $("old").checked || d.status === "Current";
 }
+const STOP = new Set(["the", "a", "an", "of", "and", "or", "for", "to", "in", "on", "with", "standard", "standards", "drawing", "drawings"]);
+const stem = (w) => w.length > 4 ? w.replace(/(ies|ing|es|s)$/, (m) => m === "ies" ? "y" : "") : w;
+const toks = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+function lev(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+function termScore(t, words) {
+  const ts = stem(t); let best = 0;
+  for (const k of words) {
+    const ks = stem(k); let s = 0;
+    if (k === t || ks === ts) s = 4;
+    else if (k.startsWith(t) || ks.startsWith(ts)) s = 3;
+    else if (t.length >= 3 && k.includes(t)) s = 2;
+    else if (t.length >= 4 && Math.abs(k.length - t.length) <= 2 && lev(ks, ts) <= (t.length >= 7 ? 2 : 1)) s = 1.5;
+    if (s > best) best = s;
+  }
+  return best;
+}
+// Every term must match (exact). If nothing does, fall back to items matching any term, best first.
+function rank(items, text, terms) {
+  const ts = terms.map(t => t.replace(/[^a-z0-9]/g, "")).filter(t => t && !STOP.has(t));
+  if (!ts.length) return { list: items, exact: true };
+  const per = items.map(it => { const w = toks(text(it)); return { it, s: ts.map(t => termScore(t, w)) }; });
+  // rarer terms count for more, so "transformers pad" favours transformer drawings over any pad
+  const wt = ts.map((_, i) => Math.log(1 + items.length / (1 + per.filter(r => r.s[i]).length)));
+  const scored = per.map(r => ({ it: r.it, n: r.s.filter(Boolean).length, sum: r.s.reduce((a, v, i) => a + v * wt[i], 0) })).filter(r => r.n);
+  const byScore = (a, b) => b.n - a.n || b.sum - a.sum;
+  const all = scored.filter(r => r.n === ts.length).sort(byScore);
+  if (all.length) return { list: all.map(r => r.it), exact: true };
+  return { list: scored.sort(byScore).map(r => r.it), exact: false };
+}
 function drawingRows(raw, terms) {
-  if (!terms.length) return [];
+  if (!terms.length) return { list: [], exact: true };
   const q = norm(raw);
   const base = X.filter(x => DOC[x.f] && docVisible(DOC[x.f]));
   if (q.length >= 3 && /\d/.test(q)) {
     const byNum = base.filter(x => norm(x.n + (x.a || []).join("")).includes(q) || (x.a || []).some(a => norm(a).includes(q)));
-    if (byNum.length) return byNum;
+    if (byNum.length) return { list: byNum, exact: true };
   }
-  return base.filter(x => {
-    const hay = (x.t + " " + x.n + " " + (x.a || []).join(" ") + " " + x.k).toLowerCase();
-    return terms.every(t => hay.includes(t));
-  });
+  return rank(base, x => x.t + " " + x.n + " " + (x.a || []).join(" ") + " " + x.k, terms);
 }
 function render() {
   const raw = $("q").value;
   const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
-  const rows = D.filter(d => {
-    if (!docVisible(d)) return false;
-    const hay = (d.title + " " + d.group + " " + d.utility + " " + d.status).toLowerCase();
-    return terms.every(t => hay.includes(t));
-  });
-  const dr = drawingRows(raw, terms);
-  $("count").textContent = (dr.length ? dr.length + " drawing" + (dr.length === 1 ? "" : "s") + " · " : "") + rows.length + " document" + (rows.length === 1 ? "" : "s");
+  const docsR = rank(D.filter(docVisible), d => d.title + " " + d.group + " " + d.utility + " " + d.status, terms);
+  const drR = drawingRows(raw, terms);
+  const fuzzy = !docsR.exact && !drR.exact;
+  const rows = docsR.exact || fuzzy ? docsR.list : [];
+  const dr = drR.exact || fuzzy ? drR.list : [];
+  $("count").textContent = (fuzzy && (rows.length || dr.length) ? "No exact match for “" + raw.trim() + "” — showing closest results · " : "") +
+    (dr.length ? dr.length + " drawing" + (dr.length === 1 ? "" : "s") + " · " : "") + rows.length + " document" + (rows.length === 1 ? "" : "s");
   if (!rows.length && !dr.length) { $("list").innerHTML = '<div class="empty">No matches. Try fewer words or tick “Show archived/obsolete”.</div>'; return; }
   let html = "";
   if (dr.length) {
